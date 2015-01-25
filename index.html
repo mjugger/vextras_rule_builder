@@ -1,11 +1,35 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<script src="queryBuilder.js"></script>
-		<script>
-			var c = new queryBuilder();
-			console.log(c);
-		</script>
+<link href="https://staging.vextras.com/assets/cache/72063bc961a159ac7506023af0f41d43.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/5fcbc35a920bc6dd52a7af7412ccff0a.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/ed87322115fc4423990dcdef44679fe8.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/8247ad901b58362056dcb611f841b3d0.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/077915f2c794002c648fb1cfff5620ba.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/0976f77fd1fbb1c1045d5ef5ea44a796.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/3e156d4131891769c9c6006a1c70eb9d.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/c7da9078f5823de7d70e945a6a96b496.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/afb6d3a7a4f7aa742fd97948157bae27.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/f90eba8af024cd9759dd7806ede68ef3.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/c960b9b720774438459a0b67b60f68b7.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/e4649bfdcdc5e70febf025b6a85f5cc8.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/d019e07d65f2a1094a02f48f1161623a.css" rel="stylesheet">
+<link href="https://staging.vextras.com/assets/cache/f443ec2b619b6cff05abab6fff52d400.css" rel="stylesheet">
 	</head>
-	<body></body>
+	<body>
+		<select id="categorySelect">
+			<option>Order</option>
+			<option>Customer</option>
+			<option>Product</option>
+		</select>
+		<div>
+			<form id="injectSite" action="/boomerang/rules/edit/3?selected_tab=settings" id="boomerang_form" name="boomerang_form" method="POST" class="form-wrapper form-inline form-wrapper-wide"></form>
+		</div>
+		<input id="rule_eligible_at" class="field hasDatepicker" name="rule[eligible_at]" type="text" readonly="">
+	</body>
+	<script src="queryBuilder.js"></script>
+	<script>
+		var c = new rule_builder();
+		console.log(c);
+	</script>
 </html>
