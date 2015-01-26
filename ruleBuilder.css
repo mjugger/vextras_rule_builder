@@ -1,8 +1,8 @@
 .rule-holder {
-	transition:height 2s, opacity 2s;
+	transition:max-height 5s, opacity 2s;
 }
 
 .delete-rule {
-	height:0;
+	max-height:0;
 	opacity:0;
 }
