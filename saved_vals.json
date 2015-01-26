@@ -1,0 +1,33 @@
+{
+	"savedValues":{
+		"order":[
+			{
+				"select":"old_status",
+				"where":"contains",
+				"thirdField":"two of it",
+				"or":true
+			}
+		],
+		"customer":[
+			{
+				"select":"first_order_date",
+				"where":"contains",
+				"thirdField":"12/18/1984",
+				"or":true
+			},
+			{
+				"select":"street",
+				"where":"is",
+				"thirdField":"12345 dev St"
+			}
+		],
+		"product":[
+			{
+				"select":"price",
+				"where":"contains",
+				"thirdField":"$500",
+				"or":true
+			}
+		]
+	}
+}

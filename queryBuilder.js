@@ -10,7 +10,7 @@
 			injectSpot:'#injectSite',
 			categorySelect:'#categorySelect',
 			configFilePath:'configFile.json',
-			savedValsFilePath:false,
+			savedValsFilePath:'saved_vals.json',
 			startWith:3,//the amount of rules to start with when instantiated.
 			configJson:null,//holds the value of the config file once retrieved.
 			savedVals:null,//values that were saved to the server in json format.
@@ -28,6 +28,9 @@
 		//saves the scope of "this" from the main app.
 		var me = this;
 
+		var category = document.querySelector(this.properties.categorySelect);
+		this.properties.currentCategory = category.value.toLowerCase();
+
 		//grabs the el to inject into from the dom and re-assigns it to the injectSpot prop.
 		this.properties.injectSpot = document.querySelector(this.properties.injectSpot);
 
@@ -36,23 +39,22 @@
 			me.properties.configJson = data;
 			//retrieve the saved values file.
 			if(me.properties.savedValsFilePath){
-				this.fetchJson(me.properties.savedValsFilePath,function(data){
+				me.fetchJson(me.properties.savedValsFilePath,function(data){
 					me.properties.savedVals = data;
 					//creates the ui.
-					me.buildUi();
+					me.readSavedValues(me.properties.savedVals.savedValues[me.properties.currentCategory]);
 				});
 			}else{
 				//creates the ui.
 				me.startWith();
-				me.createThirdFields();
 			}
 		});
-		var category = document.querySelector(this.properties.categorySelect);
-		this.properties.currentCategory = category.value.toLowerCase();
+
 		this.assignEvents(category,{
 			change:function(){
 				var catVal = category.value.toLowerCase();
 				me.properties.currentCategory = catVal;
+				me.removeRuleUi();
 				me.buildUi();
 			}
 		},false);
@@ -98,12 +100,9 @@
 
 	//read the saved values from the json file saved to the server.
 	constructor.prototype.readSavedValues = function(savedVals){
-		//combines the saved value arrays into one
-		//to reduce overhead logic in "createDropdowns" method.
-		var combineArrys = null;
+		console.log('savedVals',savedVals,'this.properties.currentCategory',this.properties.currentCategory);
 		for (var i = 0,len = savedVals.length; i < len; i++) {
-			combineArrys = savedVals[i].select.concat(savedVals[i].where);
-			this.buildUi(savedVals[i].userInput,combineArrys);
+			this.buildUi(savedVals[i].select,savedVals[i].where,savedVals[i].thirdField,savedVals[i].or);
 		}
 	}
 
@@ -117,32 +116,45 @@
 	}
 
 	//contructs the UI elements for the app.
-	constructor.prototype.buildUi = function(userInputVal,ddVal){
+	constructor.prototype.buildUi = function(select,where,thirdField,or){
 		var me = this;
 		var ruleHolder = this.createNode({
 				tag:'div',
 				classNames:'rule-holder'
 			});
-		//holds ui elements in an object for ease of appending via loop.
+		var ruleObject = {
+			thirdFields:this.createThirdFields(thirdField)
+		}
+		//holds ui elements in an object for ease of appending to dom via loop.
 		var uiHolder = {
-			orClause:this.createNode({
-				tag:'input',
-				classNames:'or-clause',
-				attrs:{
-					type:'checkbox',
-					name:'rule[orClause]'
+			orClause:(function(){
+				var orBox = me.createNode({
+					tag:'input',
+					classNames:'or-clause',
+					attrs:{
+						type:'checkbox',
+						name:'rule[orClause]'
+					}
+				});
+				if(or){
+					orBox.checked = or;
+					orBox.classNames +=' ';
 				}
-			}),
+				return orBox;
+			})(),
 			select:(function(){
 				var row = me.createNode({
 					tag:'div',
 					classNames:'form-row',
-					html:'<label>Select </label>'
+					html:'<label>Select </label>',
+					attrs:{
+						"data-myIndex":me.properties.ruleCache.length
+					}
 				});
-				var dropdown = me.createDropdown(me.properties.configJson.default_dropdowns[me.properties.currentCategory].select,ddVal);
+				var dropdown = me.createDropdown(me.properties.configJson.default_dropdowns[me.properties.currentCategory].select,select);
+				ruleObject.currentFieldType = dropdown[dropdown.selectedIndex].getAttribute('data-fieldType');
 				row.appendChild(dropdown);
 				me.thirdParty_chosen_dropdown(dropdown);
-				//row.appendChild( me.createPseudoDropdown(me.properties.configJson.default_dropdowns[me.properties.currentCategory].select,ddVal) );
 				return row;
 			})(),
 			where:(function(){
@@ -152,20 +164,16 @@
 					html:'<label>Where </label>'
 				});
 
-				var dropdown = me.createDropdown(me.properties.configJson.default_dropdowns.where.select,ddVal);
+				var dropdown = me.createDropdown(me.properties.configJson.default_dropdowns.where.select,where);
 				row.appendChild(dropdown);
 				me.thirdParty_chosen_dropdown(dropdown);
 				return row;
 			})(),
 			userInput:(function(){
-				var field = me.createNode({
-					tag:'input',
-					classNames:'user-input field',
-					attrs:{
-						value:userInputVal || '',
-						name:'rule[userInput]'
-					}
+				var fieldHolder = me.createNode({
+					tag:'div'
 				});
+				var field = ruleObject.thirdFields[ruleObject.currentFieldType];
 				var label = me.createNode({
 					tag:'label',
 					html:'is'
@@ -175,7 +183,9 @@
 					classNames:'form-row'
 				});
 				row.appendChild(label);
-				row.appendChild(field);
+				fieldHolder.appendChild(field);
+				ruleObject.fieldHolder = fieldHolder;
+				row.appendChild(fieldHolder);
 				return row;
 			})(),
 			ruleAddRemove:(function(){
@@ -224,14 +234,31 @@
 		for(var el in uiHolder){
 			docFrag.appendChild(uiHolder[el]);
 		}
-		this.properties.ruleCache.push(ruleHolder);
 		ruleHolder.appendChild(docFrag);
-		this.properties.injectSpot.appendChild(ruleHolder);
+		ruleObject.rule = ruleHolder;
+		this.properties.ruleCache.push(ruleObject);
+		this.properties.injectSpot.appendChild(ruleObject.rule);
 	}
 
+	constructor.prototype.thirdParty_datePicker = function(el){
+		$(el).datepicker({
+			minDate: "-3M",
+			maxDate: "+3M"
+		})
+	}
 
 	constructor.prototype.thirdParty_chosen_dropdown = function(el){
-		$(el).chosen();
+		var me = this;
+		$(el).chosen().change(function(){
+			var ruleObject = me.properties.ruleCache[$(this).parent().attr('data-myIndex')];
+			var fieldType = $(this).children('option:selected').attr('data-fieldType');
+			ruleObject.fieldHolder.innerHTML = '';
+			ruleObject.fieldHolder.appendChild(ruleObject.thirdFields[fieldType]);
+		});
+	}
+
+	constructor.prototype.getFieldType = function(){
+
 	}
 
 	//used for selecting a category from the dropdown
@@ -244,22 +271,44 @@
 
 	//removes targeted rule from the dom
 	constructor.prototype.removeRuleUi = function(index){
-		var el = this.properties.ruleCache[index];
-		el.parentNode.removeChild(el);
-		delete this.properties.ruleCache[index];
+		if(index){
+			var el = this.properties.ruleCache[index].rule;
+			el.className += ' delete-rule';
+			el.parentNode.removeChild(el);
+			delete this.properties.ruleCache[index];
+		}else{
+			this.properties.ruleCache = [];
+			this.properties.injectSpot.innerHTML = '';
+		}
 	}
 
 	//creates the elements from the json config file
-	constructor.prototype.createThirdFields = function(){
+	constructor.prototype.createThirdFields = function(savedVal){
 		var el = null;
+		var thirdFields = {};
+		var elHolder = null;
 		for(var field in this.properties.configJson.thirdFields){
-			el = this.createNode(this.properties.configJson.thirdFields[field]);
-			this.properties.thirdFields[field] = el;
+			if(this.properties.configJson.thirdFields[field].tag == 'select'){
+				el = this.createDropdown(this.properties.configJson.thirdFields[field].dropdownOptions,savedVal);
+				elHolder = this.createNode({
+					tag:'div'
+				});
+				elHolder.appendChild(el);
+				this.thirdParty_chosen_dropdown(el);
+				thirdFields[field] = elHolder;
+			}else{
+				el = this.createNode(this.properties.configJson.thirdFields[field]);
+				if(field == 'date'){
+					this.thirdParty_datePicker(el);
+				}
+				el.value = savedVal || '';
+				thirdFields[field] = el;
+			}
 		}
-		console.log(this.properties.thirdFields);
+		return thirdFields;
 	}
 
-	constructor.prototype.createDropdown = function(dropdownvals,savedVal){
+	constructor.prototype.createDropdown = function(dropdownvals,savedVal,attributes){
 		var select = this.createNode({
 			tag:'select',
 			classNames:'select-field',
@@ -270,18 +319,23 @@
 			}
 		});
 		var option = null;
-		var attrs = {};
+		var attrs = attributes || {};
+		var aValue = null;
 		var childOptions = document.createDocumentFragment();
 		for (var i = 0,len = dropdownvals.length;i<len;i++) {
-				if(savedVal == dropdownvals[i]){
+				aValue = dropdownvals[i].value || dropdownvals[i];
+				if(dropdownvals[i].fieldType){
+					attrs['data-fieldType'] = dropdownvals[i].fieldType;
+				}
+				if(savedVal == aValue){
 					attrs.selected = 'selected';
 				}else{
 					delete attrs.selected;
 				}
-				attrs.value = dropdownvals[i];
+				attrs.value = aValue;
 				option = this.createNode({
 					tag:'option',
-					html:dropdownvals[i],
+					html:aValue,
 					attrs:attrs
 				});
 				childOptions.appendChild(option);
@@ -352,11 +406,41 @@
 		}
 	}
 
+	constructor.prototype.createCustomEvent = function(event){
+		var eventObj = null;
+		if(Event){
+			eventObj = new Event(event);
+		}else if(document.createEvent){
+			eventObj = document.createEvent('Event');
+			eventObj.initEvent(event);
+		}
+	}
+
 	//remove event(s) from ui object(s)
 	constructor.prototype.unAssignEvents = function(el,events){
 		for(var event in events){
 			el.removeEventListener(event,events[event]);
 		}
+	}
+
+	//returns the correct css3 transition event
+	constructor.prototype.transitionEndEventName = function() {
+    	var i,
+        undefined,
+        el = document.createElement('div'),
+        transitions = {
+            'transition':'transitionend',
+            'OTransition':'otransitionend',  // oTransitionEnd in very old Opera
+            'MozTransition':'transitionend',
+            'WebkitTransition':'webkitTransitionEnd'
+        };
+
+	    for (i in transitions) {
+	        if (transitions.hasOwnProperty(i) && el.style[i] !== undefined) {
+	            return transitions[i];
+	        }
+	    }
+
 	}
 
 	//exposes the constructor to the global environment

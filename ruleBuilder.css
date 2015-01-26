@@ -1,0 +1,8 @@
+.rule-holder {
+	transition:height 2s, opacity 2s;
+}
+
+.delete-rule {
+	height:0;
+	opacity:0;
+}
