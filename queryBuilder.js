@@ -10,7 +10,7 @@
 			injectSpot:'#injectSite',
 			categorySelect:'#categorySelect',
 			configFilePath:'configFile.json',
-			savedValsFilePath:'saved_vals.json',
+			savedValsFilePath:null,
 			startWith:3,//the amount of rules to start with when instantiated.
 			configJson:null,//holds the value of the config file once retrieved.
 			savedVals:null,//values that were saved to the server in json format.
@@ -209,6 +209,7 @@
 				me.assignEvents(removeRule,{
 					mouseup:function(){
 						//removeRule.removeEventListener('mouseup',test);
+						this.parentNode.parentNode.className = this.parentNode.parentNode.className.replace('add-rule','');
 						me.removeRuleUi(this.getAttribute('data-myIndex'));
 					}
 				});
@@ -238,6 +239,9 @@
 		ruleObject.rule = ruleHolder;
 		this.properties.ruleCache.push(ruleObject);
 		this.properties.injectSpot.appendChild(ruleObject.rule);
+		window.getComputedStyle(ruleObject.rule).opacity;
+		ruleObject.rule.className += ' add-rule';
+		//this.assignEvents
 	}
 
 	constructor.prototype.thirdParty_datePicker = function(el){

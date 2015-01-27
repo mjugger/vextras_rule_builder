@@ -1,8 +1,13 @@
 .rule-holder {
-	transition:max-height 5s, opacity 2s;
+	-webkit-transition: opacity 1s;
+	transition: opacity 1s;
+	opacity:0;
 }
 
 .delete-rule {
-	max-height:0;
 	opacity:0;
+}
+
+.add-rule {
+	opacity:1;
 }
