@@ -28,8 +28,8 @@
 		//saves the scope of "this" from the main app.
 		var me = this;
 
-		var category = document.querySelector(this.properties.categorySelect);
-		this.properties.currentCategory = category.value.toLowerCase();
+		this.properties.categorySelect = document.querySelector(this.properties.categorySelect);
+		this.properties.currentCategory = this.properties.categorySelect.value.toLowerCase();
 
 		//grabs the el to inject into from the dom and re-assigns it to the injectSpot prop.
 		this.properties.injectSpot = document.querySelector(this.properties.injectSpot);
@@ -50,17 +50,15 @@
 			}
 		});
 
-		this.assignEvents(category,{
+		this.assignEvents(this.properties.categorySelect,{
 			change:function(){
-				var catVal = category.value.toLowerCase();
-				me.properties.currentCategory = catVal;
-				me.removeRuleUi();
-				me.buildUi();
+				me.selectCategory();
 			}
 		},false);
 	}
 
 	//assigns new properties to the "properties" object.
+	//@param {object} props: the properties passed to the constructor
 	constructor.prototype.assignProperties = function(props){
 		for(var key in props){
 			if(key in this.properties){
@@ -106,16 +104,19 @@
 		}
 	}
 
-	//temporaraly saves the rule(s) and it's values when switching between categories.
-	constructor.prototype.saveState = function(rule){
-		if(this.properties.saveState[this.properties.currentCategory]){
-			this.properties.saveState[this.properties.currentCategory].push(rule);
-		}else{
-			this.properties.saveState[this.properties.currentCategory] = [];
-		}
+	//used to switch between categories
+	constructor.prototype.selectCategory = function(){
+		var catVal = this.properties.categorySelect.value.toLowerCase();
+		this.properties.currentCategory = catVal;
+		this.removeRuleUi();
+		this.startWith();
 	}
 
 	//contructs the UI elements for the app.
+	//@param {text} select: the saved value from the server json
+	//@param {text} where:the saved value from the server json
+	//@param {object} thirdField: the third fields from the config file json
+	//@param {boolean} or: the saved value from the server json
 	constructor.prototype.buildUi = function(select,where,thirdField,or){
 		var me = this;
 		var ruleHolder = this.createNode({
@@ -239,11 +240,13 @@
 		ruleObject.rule = ruleHolder;
 		this.properties.ruleCache.push(ruleObject);
 		this.properties.injectSpot.appendChild(ruleObject.rule);
+		
+		//forces the dom to render the styles
 		window.getComputedStyle(ruleObject.rule).opacity;
 		ruleObject.rule.className += ' add-rule';
-		//this.assignEvents
 	}
 
+	//adds a date picker to the element passed
 	constructor.prototype.thirdParty_datePicker = function(el){
 		$(el).datepicker({
 			minDate: "-3M",
@@ -251,6 +254,7 @@
 		})
 	}
 
+	//adds the chosen plugin to the element passed
 	constructor.prototype.thirdParty_chosen_dropdown = function(el){
 		var me = this;
 		$(el).chosen().change(function(){
@@ -261,19 +265,8 @@
 		});
 	}
 
-	constructor.prototype.getFieldType = function(){
-
-	}
-
-	//used for selecting a category from the dropdown
-	constructor.prototype.selectCategory = function(){
-		var me = this;
-		var catVal = category.value.toLowerCase();
-		this.properties.currentCategory = catVal;
-		me.buildUi();
-	}
-
 	//removes targeted rule from the dom
+	//@param {number} index: the index of the rule in the ruleCache array
 	constructor.prototype.removeRuleUi = function(index){
 		if(index){
 			var el = this.properties.ruleCache[index].rule;
@@ -287,6 +280,8 @@
 	}
 
 	//creates the elements from the json config file
+	//@param {text} savedVal: the saved value from the server json
+	//@returns {object} thirdFields: contains the third fields a rule can switch between
 	constructor.prototype.createThirdFields = function(savedVal){
 		var el = null;
 		var thirdFields = {};
@@ -312,6 +307,11 @@
 		return thirdFields;
 	}
 
+	//creates a dropdown
+	//@param {array} dropdownvals: the dropdown values that will become options
+	//@param {text} savedVal: the saved value from the server json
+	//@param {object} attributes: extra attributes to add the the dropdown
+	//@returns {htmlElement} select: the dropdown element
 	constructor.prototype.createDropdown = function(dropdownvals,savedVal,attributes){
 		var select = this.createNode({
 			tag:'select',
@@ -348,44 +348,6 @@
 		return select;
 	}
 
-	constructor.prototype.createPseudoDropdown = function(dropdownvals,savedVal){
-		var dropHolder = this.createNode({
-			tag:'div',
-			classNames:'chosen-container chosen-container-single',
-			html:'<a class="chosen-single" tabindex="-1"><span></span><div><b></b></div></a>',
-			attrs:{
-				style:"width: 345px;"
-			}
-		});
-		var pseudoDrop = this.createNode({
-			tag:'div',
-			classNames:'chosen-drop',
-			html:'<div class="chosen-search"><input type="text" autocomplete="off" tabindex="2"></div>',
-		});
-		var ul = this.createNode({
-			tag:'ul',
-			classNames:'chosen-results'
-		});
-		var li = null;
-		for (var i = 0,len = dropdownvals.length;i<len;i++) {
-			li = this.createNode({
-				tag:'li',
-				classNames:'active-result',
-				html:dropdownvals[i],
-				attrs:{
-					"data-option-array-index":i
-				}
-			});
-			if(savedVal == dropdownvals[i]){
-				li.classNames += ' result-selected';
-			}
-			ul.appendChild(li);
-		}
-		pseudoDrop.appendChild(ul);
-		dropHolder.appendChild(pseudoDrop);
-		return dropHolder;
-	}
-
 	constructor.prototype.createNode = function(node){
 		var el = document.createElement(node.tag);
 		el.className = node.classNames || '';
@@ -407,16 +369,6 @@
 	constructor.prototype.assignEvents = function(el,events,useCapture){
 		for(var event in events){
 			el.addEventListener(event,events[event],useCapture);
-		}
-	}
-
-	constructor.prototype.createCustomEvent = function(event){
-		var eventObj = null;
-		if(Event){
-			eventObj = new Event(event);
-		}else if(document.createEvent){
-			eventObj = document.createEvent('Event');
-			eventObj.initEvent(event);
 		}
 	}
 
