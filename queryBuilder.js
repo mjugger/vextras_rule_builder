@@ -50,11 +50,7 @@
 			}
 		});
 
-		this.assignEvents(this.properties.categorySelect,{
-			change:function(){
-				me.selectCategory();
-			}
-		},false);
+		this.thirdParty_chosen_dropdown(this.properties.categorySelect,this.selectCategory,this.thirdParty_chosen_category_callback);
 	}
 
 	//assigns new properties to the "properties" object.
@@ -105,11 +101,13 @@
 	}
 
 	//used to switch between categories
-	constructor.prototype.selectCategory = function(){
-		var catVal = this.properties.categorySelect.value.toLowerCase();
-		this.properties.currentCategory = catVal;
-		this.removeRuleUi();
-		this.startWith();
+	//@param {object} scope: preserves the scope of "this" to the rule builder incase jquery is used
+	constructor.prototype.selectCategory = function(scope){
+		var me = scope || this;
+		var catVal = me.properties.categorySelect.value.toLowerCase();
+		me.properties.currentCategory = catVal;
+		me.removeRuleUi();
+		me.startWith();
 	}
 
 	//contructs the UI elements for the app.
@@ -155,7 +153,7 @@
 				var dropdown = me.createDropdown(me.properties.configJson.default_dropdowns[me.properties.currentCategory].select,select);
 				ruleObject.currentFieldType = dropdown[dropdown.selectedIndex].getAttribute('data-fieldType');
 				row.appendChild(dropdown);
-				me.thirdParty_chosen_dropdown(dropdown);
+				me.thirdParty_chosen_dropdown(dropdown,me.thirdParty_chosen_category_callback);
 				return row;
 			})(),
 			where:(function(){
@@ -167,7 +165,7 @@
 
 				var dropdown = me.createDropdown(me.properties.configJson.default_dropdowns.where.select,where);
 				row.appendChild(dropdown);
-				me.thirdParty_chosen_dropdown(dropdown);
+				me.thirdParty_chosen_dropdown(dropdown,me.thirdParty_chosen_category_callback);
 				return row;
 			})(),
 			userInput:(function(){
@@ -240,7 +238,7 @@
 		ruleObject.rule = ruleHolder;
 		this.properties.ruleCache.push(ruleObject);
 		this.properties.injectSpot.appendChild(ruleObject.rule);
-		
+
 		//forces the dom to render the styles
 		window.getComputedStyle(ruleObject.rule).opacity;
 		ruleObject.rule.className += ' add-rule';
@@ -255,15 +253,21 @@
 	}
 
 	//adds the chosen plugin to the element passed
-	constructor.prototype.thirdParty_chosen_dropdown = function(el){
+	constructor.prototype.thirdParty_chosen_dropdown = function(el,callback){
 		var me = this;
 		$(el).chosen().change(function(){
-			var ruleObject = me.properties.ruleCache[$(this).parent().attr('data-myIndex')];
-			var fieldType = $(this).children('option:selected').attr('data-fieldType');
-			ruleObject.fieldHolder.innerHTML = '';
-			ruleObject.fieldHolder.appendChild(ruleObject.thirdFields[fieldType]);
+			callback(me,el);
 		});
 	}
+
+	constructor.prototype.thirdParty_chosen_category_callback = function(scope,el){
+			var me = scope || this;
+			var ruleObject = scope.properties.ruleCache[$(el).parent().attr('data-myIndex')];
+			var fieldType = $(el).children('option:selected').attr('data-fieldType');
+			ruleObject.fieldHolder.innerHTML = '';
+			ruleObject.fieldHolder.appendChild(ruleObject.thirdFields[fieldType]);
+		}
+
 
 	//removes targeted rule from the dom
 	//@param {number} index: the index of the rule in the ruleCache array
@@ -293,7 +297,7 @@
 					tag:'div'
 				});
 				elHolder.appendChild(el);
-				this.thirdParty_chosen_dropdown(el);
+				this.thirdParty_chosen_dropdown(el,this.thirdParty_chosen_category_callback);
 				thirdFields[field] = elHolder;
 			}else{
 				el = this.createNode(this.properties.configJson.thirdFields[field]);
